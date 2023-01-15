@@ -11,7 +11,7 @@ const UserServiceInstance = new UserService();
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: "http://localhost:8082/auth/google/callback",
+  callbackURL: "https://twitter-backend-fcmb.onrender.com/auth/google/callback",
   passReqToCallback: true,
 },
 function(request, accessToken, refreshToken, profile, done) {
