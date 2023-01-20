@@ -2,6 +2,26 @@ const Users = require('../modals/user.modal');
 const jwt = require('jsonwebtoken');
 
 class UserService {
+    async newThread(email, payload) {
+        try {
+            const result = await Users.updateOne({ email: email }, {
+                $push: { tweets: payload }
+            })
+            return result;
+        } catch (error) {
+            throw err;
+        }
+    }
+    async newTweet(email, payload) {
+        try {
+            const result = await Users.updateOne({ email: email }, {
+                $push: { tweets: payload }
+            })
+            return result;
+        } catch (error) {
+            throw err;
+        }
+    }
     async getByEmail(email) {
         try {
             const user = await Users.findOne({ email: email });

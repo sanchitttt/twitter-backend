@@ -8,14 +8,20 @@ function arrayLimit(val) {
     return val.length <= 4;
 }
 
+const pollSchema = new mongoose.Schema({
+    expiresAt: { type: Date, required: true },
+    options: [String]
+})
+
 const tweetSchema = new mongoose.Schema({
     tweetText: { type: String, default: "" },
-    threadNumber : {type:Number,default:0},
+    poll: { type: [pollSchema], validate: (val) => arrayLimit(val) },
+    threadNumber: { type: Number, default: 0 },
     views: { type: Number, default: 0 },
     retweets: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
-    audience : {type:String, enum : ["Everyone", "Twitter circle"] , default: "Everyone"},
-    whoCanReply: { type: String, enum: ['Everyone', 'People you follow', 'Only people you mention'] , default:"Everyone"},
+    audience: { type: String, enum: ["Everyone", "Twitter circle"], default: "Everyone" },
+    whoCanReply: { type: String, enum: ['Everyone', 'People you follow', 'Only people you mention'], default: "Everyone" },
     attachments: { type: Array, validate: (val) => arrayLimit(val) }
 }, { timestamps: true })
 
@@ -33,12 +39,12 @@ const userSchema = new mongoose.Schema({
     accountName: { type: String, maxLength: 50, required: true },
     accountHandle: { type: String, maxLength: 15, required: true, unique: true },
     dob: { type: Date },
-    bio : {type:String,maxLength:160,default: ''},
+    bio: { type: String, maxLength: 160, default: '' },
     location: { type: String, default: '' },
     website: { type: String },
     verified: { type: Boolean, default: false },
     typeOfVerification: { type: String, default: null },
-    tweets: [tweetSchema],
+    tweets: [],
     following: { type: [followingAndFollowerSchema], default: [] },
     followers: { type: [followingAndFollowerSchema], default: [] }
 }, { timestamps: true })
