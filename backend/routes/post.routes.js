@@ -1,7 +1,7 @@
 const router = require('express').Router();
-const {postNewThread, postNewTweet} = require('../controllers/post.controller');
+const {toggleLike} = require('../controllers/post.controller')
 
-router.post('/new/thread' , postNewThread);
-router.post('/new/tweet', postNewTweet)
+router.post('/stats/like/toggle', toggleLike);
+
 
 module.exports = router;

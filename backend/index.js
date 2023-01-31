@@ -21,7 +21,9 @@ const authRoutes = require('./routes/auth.routes');
 const pageRoutes = require('./routes/pages.routes');
 const loggedOutRoutes = require('./routes/loggedOut.routes')
 const cookiesRoutes = require('./routes/cookies.routes');
+const tweetRoutes = require('./routes/tweet.routes');
 const postRoutes = require('./routes/post.routes');
+const otherRoutes = require('./routes/other.routes');
 const verifyAuth = require('./middlewares/verifyAuth');
 
 
@@ -62,7 +64,9 @@ app.use("/auth", authRoutes);
 app.use("/pages", verifyAuth, pageRoutes);
 app.use("/loggedOut", loggedOutRoutes)
 app.use("/cookies", cookiesRoutes);
-app.use("/tweet", verifyAuth, postRoutes);
+app.use("/tweet", verifyAuth, tweetRoutes);
+app.use("/post", verifyAuth, postRoutes );
+app.use("/other",verifyAuth,otherRoutes)
 
 
 

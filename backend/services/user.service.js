@@ -1,9 +1,41 @@
 const Users = require('../modals/user.modal');
 const jwt = require('jsonwebtoken');
+const { default: mongoose } = require('mongoose');
 
 class UserService {
+    async searchByAccountHandle(text) {
+        try {
+            const results = await Users.find({ accountHandle: { $regex: text } });
+            return results;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async getDetails(email) {
+        try {
+            const details = await Users.findOne({ email: email }, { likedTweets: 0, retweetedTweets: 0 });
+            return details;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async toggleLike(email, tweetId) {
+        try {
+            const likedAlready = await Users.findOne({ "likedAlready._id": { $eq: tweetId } });
+            if (likedAlready) {
+                const result = Users.updateOne({ email: email }, { lik })
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
     async newThread(email, payload) {
         try {
+            for (let i = 0; i < payload.length; i++) {
+                const newId = new mongoose.Types.ObjectId();
+                payload[i]._id = newId;
+                payload[i].createdAt = new Date();
+            }
             const result = await Users.updateOne({ email: email }, {
                 $push: { tweets: payload }
             })
@@ -14,6 +46,8 @@ class UserService {
     }
     async newTweet(email, payload) {
         try {
+            const newId = new mongoose.Types.ObjectId();
+            payload = { ...payload, _id: newId, createdAt: new Date() }
             const result = await Users.updateOne({ email: email }, {
                 $push: { tweets: payload }
             })
