@@ -2,7 +2,107 @@ const Users = require('../modals/user.modal');
 const jwt = require('jsonwebtoken');
 const { default: mongoose } = require('mongoose');
 
+
 class UserService {
+    async newImageStory(email, payload) {
+        try {
+            const obj = {
+                imageSrc : payload.imgSrc,
+                scaleLevel : payload.scaleValue,
+                rotateLevel: payload.rotateValue
+            }
+            const result = await Users.updateOne({email:email} , {
+                $push : {stories : obj}
+            })
+            return result;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async newReel(email, payload) {
+        try {
+            const result = await Users.updateOne({ email: email }, {
+                $push: { reels: payload }
+            })
+            console.log(result);
+            return result;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async editProfile(email, accountName, accountBio, location, website) {
+        try {
+            const user = await Users.findOne({ email: email });
+            user.accountName = accountName;
+            user.bio = accountBio;
+            user.location = location;
+            user.website = website;
+            await Users.updateOne({ email: email }, user);
+            return true;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async alreadyFollowing(followRequestSenderEmail, accountHandle) {
+        try {
+            const result = await Users.findOne({ email: followRequestSenderEmail })
+            const following = result.following;
+            for (let i = 0; i < following.length; i++) {
+                if (following[i].accountHandle === accountHandle) return true;
+            }
+            return false;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async unfollow(followRequestSender, followRequestReciever) {
+        // console.log(followRequestSender, followRequestReciever)
+        try {
+            await Users.updateOne({ accountHandle: followRequestSender.accountHandle }, {
+                $pull: { "following": { "accountHandle": followRequestReciever.accountHandle } }
+            })
+            await Users.updateOne({ accountHandle: followRequestReciever.accountHandle }, {
+                $pull: { "followers": { "accountHandle": followRequestSender.accountHandle } }
+            })
+            return true;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async follow(followRequestSender, followRequestReciever) {
+
+        try {
+            await Users.updateOne({ accountHandle: followRequestSender.accountHandle }, {
+                $push: { following: followRequestReciever }
+            })
+            await Users.updateOne({ accountHandle: followRequestReciever.accountHandle }, {
+                $push: { followers: followRequestSender }
+            })
+            return true;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async alreadyFollows(followRequestSenderEmail, followRequestReciever) {
+        try {
+            const result = await Users.findOne({ email: followRequestSenderEmail })
+            const following = result.following;
+            for (let i = 0; i < following.length; i++) {
+                if (following[i].accountHandle === followRequestReciever.accountHandle) return true;
+            }
+            return false;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async findByAccountHandle(accountHandle) {
+        try {
+            const results = await Users.findOne({ accountHandle: accountHandle });
+            return results;
+        } catch (error) {
+            throw error;
+        }
+    }
     async searchByAccountHandle(text) {
         try {
             const results = await Users.find({ accountHandle: { $regex: text } });

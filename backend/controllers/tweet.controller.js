@@ -14,6 +14,8 @@ const postNewThread = async (req, res) => {
 const postNewTweet = async (req, res) => {
     try {
         const result = await UserServiceInstance.newTweet(req.user.email, req.body);
+        console.log(result);
+
         res.status(200).json(result);
     } catch (error) {
         res.status(500).end();

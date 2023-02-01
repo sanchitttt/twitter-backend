@@ -5,11 +5,9 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const postLogin = async (req, res) => {
-    console.log('reached');
     try {
         const { username, email } = req.body;
         const result = await UserServiceInstance.exists({ email: email, username: username });
-        console.log(result);
         if (result.exists) {
             const token = result.token;
             res.cookie('login', token, { maxAge: 1000 * 60 * 60, httpOnly: true });
@@ -41,6 +39,25 @@ const postLogin2 = (req, res) => {
     }
 }
 
+const patchFollow = async (req, res) => {
+    try {
+        const { followRequestReciever } = req.body;
+        const { accountHandle, accountName, verified, typeOfVerification, profileSrc } = req.user;
+        let alreadyFollows = await UserServiceInstance.alreadyFollows(req.user.email, followRequestReciever);
+        console.log(req.user.email, followRequestReciever.accountHandle, alreadyFollows)
+        if (!alreadyFollows) {
+            const result = await UserServiceInstance.follow({ accountHandle, accountName, verified, typeOfVerification, profileSrc }, followRequestReciever);
+            res.status(200).json({ "message": "Successfully followed" });
+        }
+        else {
+            const result = await UserServiceInstance.unfollow({ accountHandle, accountName, verified, typeOfVerification, profileSrc }, followRequestReciever);
+            res.status(204).json({ "message": "Successfully unfollowed" });
+        }
+    }
+    catch (err) {
+        throw err;
+    }
+}
 
 const getHome = async (req, res) => {
     res.end();
@@ -59,4 +76,44 @@ const getProfile = async (req, res) => {
 }
 
 
-module.exports = { postLogin, postLogin2 ,getHome,getProfile}
+const patchEditProfile = async (req, res) => {
+    try {
+        const { email } = req.user;
+        const { accountBio, location, website, accountName } = req.body;
+        const result = await UserServiceInstance.editProfile(email, accountName, accountBio, location, website);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
+
+const postNewReel = async (req, res) => {
+    try {
+        const { email } = req.user;
+        const result = await UserServiceInstance.newReel(email, req.body);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
+
+const postNewImageStory = async (req, res) => {
+    try {
+        const { email } = req.user;
+        const result = await UserServiceInstance.newImageStory(email,req.body);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
+
+module.exports = {
+    postLogin,
+    postLogin2,
+    getHome,
+    getProfile,
+    patchFollow,
+    patchEditProfile,
+    postNewReel,
+    postNewImageStory
+}

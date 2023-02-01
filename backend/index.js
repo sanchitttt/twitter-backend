@@ -23,6 +23,7 @@ const loggedOutRoutes = require('./routes/loggedOut.routes')
 const cookiesRoutes = require('./routes/cookies.routes');
 const tweetRoutes = require('./routes/tweet.routes');
 const postRoutes = require('./routes/post.routes');
+const noAuthRoutes = require('./routes/noAuth.routes.js');
 const otherRoutes = require('./routes/other.routes');
 const verifyAuth = require('./middlewares/verifyAuth');
 
@@ -39,7 +40,7 @@ mongoose.connect(DB_URI, {
 
 
 // global middlewares
-app.use(express.json());
+app.use(express.json({limit: '50mb'}));
 app.use(
     cors(
         {
@@ -66,7 +67,8 @@ app.use("/loggedOut", loggedOutRoutes)
 app.use("/cookies", cookiesRoutes);
 app.use("/tweet", verifyAuth, tweetRoutes);
 app.use("/post", verifyAuth, postRoutes );
-app.use("/other",verifyAuth,otherRoutes)
+app.use('/noauth', noAuthRoutes);
+app.use("/other",verifyAuth,otherRoutes);
 
 
 

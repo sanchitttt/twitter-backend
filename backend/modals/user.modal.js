@@ -53,7 +53,7 @@ const followingAndFollowerSchema = new mongoose.Schema({
     verified: { type: Boolean, default: false },
     profileSrc: { type: String, default: 'https://cdn-icons-png.flaticon.com/512/847/847969.png' },
     accountName: { type: String, maxLength: 50, required: true },
-    accountHandle: { type: String, maxLength: 15, required: true, unique: true },
+    accountHandle: { type: String, maxLength: 15, required: true },
 })
 
 const userSchema = new mongoose.Schema({
@@ -61,14 +61,14 @@ const userSchema = new mongoose.Schema({
     email: { type: String, validate: (val) => validateEmail(val), required: true, unique: true },
     accountName: { type: String, maxLength: 50, required: true },
     accountHandle: { type: String, maxLength: 15, required: true, unique: true },
-    dob: { type: Date },
+    dob: { type: Date, default: '' },
     bio: { type: String, maxLength: 160, default: '' },
     location: { type: String, default: '' },
-    website: { type: String },
+    website: { type: String, default: '' },
     verified: { type: Boolean, default: false },
     typeOfVerification: { type: String, default: null },
     tweets: { type: [tweetSchema | [tweetSchema]], default: [] },
-    following: { type: [followingAndFollowerSchema], default: [] },
+    following: { type: [], default: [] },
     followers: { type: [followingAndFollowerSchema], default: [] },
     stories: { type: [storiesSchema], default: [] },
     reels: { type: [reelsSchema], default: [] },
