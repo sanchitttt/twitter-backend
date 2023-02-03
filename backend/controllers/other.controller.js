@@ -21,4 +21,24 @@ const getSearchResults = async (req, res) => {
     }
 }
 
-module.exports = { getAccountDetails, getSearchResults };
+const getWhoToFollow = async (req, res) => {
+    try {
+        const result = await UserServiceInstance.generateWhoToFollow(req.user.email);
+        res.status(200).json(result);
+    }
+    catch (err) {
+        console.log(err);
+        res.status(500).json(err);
+    }
+}
+
+const getTrendingTweets = async (req, res) => {
+    try {
+
+    }
+    catch (err) {
+        res.status(500).json(err);
+    }
+}
+
+module.exports = { getAccountDetails, getWhoToFollow, getSearchResults, getTrendingTweets };

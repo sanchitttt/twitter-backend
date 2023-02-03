@@ -67,7 +67,6 @@ const getProfile = async (req, res) => {
     try {
         const { email } = req.user;
         const result = await UserServiceInstance.getByEmail(email);
-        console.log(result);
         res.status(200).json(result);
         res.end();
     } catch (error) {
@@ -100,14 +99,45 @@ const postNewReel = async (req, res) => {
 const postNewImageStory = async (req, res) => {
     try {
         const { email } = req.user;
-        const result = await UserServiceInstance.newImageStory(email,req.body);
+        const result = await UserServiceInstance.newImageStory(email, req.body);
         res.status(200).json(result);
     } catch (error) {
         res.status(500).json(error);
     }
 }
 
+const getHomeTimeline = async (req, res) => {
+    try {
+        const { email } = req.user;
+        const result = await UserServiceInstance.getTimeline(email);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
+
+const postBookmarks = async (req,res) => {
+    try {
+        const {email} = req.user;
+        const {tweetBody} = req.body;
+        const result = await UserServiceInstance.postBookmarks(email,tweetBody);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json(error)
+    }
+}
+
+const getBookmarks = async (req,res) => {
+    try {
+        const {email} = req.user;
+        const result = await UserServiceInstance.getBookmarks(email);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json(error)
+    }
+}
 module.exports = {
+    getHomeTimeline,
     postLogin,
     postLogin2,
     getHome,
@@ -115,5 +145,8 @@ module.exports = {
     patchFollow,
     patchEditProfile,
     postNewReel,
-    postNewImageStory
+    postNewImageStory,
+    getBookmarks,
+    postBookmarks
+
 }

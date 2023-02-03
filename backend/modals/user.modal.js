@@ -31,8 +31,9 @@ const storiesSchema = new mongoose.Schema({
 
 
 const pollSchema = new mongoose.Schema({
+    votes: { type: [], default: [] },
     expiresAt: { type: Date, default: null },
-    options: {}
+    options: {},
 })
 
 const tweetSchema = new mongoose.Schema({
@@ -43,6 +44,8 @@ const tweetSchema = new mongoose.Schema({
     views: { type: Number, default: 0 },
     retweets: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
+    likedBy: { type: [], default: [] },
+    retweetedBy: { type: [], default: [] },
     audience: { type: String, enum: ["Everyone", "Twitter circle"], default: "Everyone" },
     whoCanReply: { type: String, enum: ['Everyone', 'People you follow', 'Only people you mention'], default: "Everyone" },
     attachments: { type: Array, validate: (val) => arrayLimit(val) }
@@ -73,7 +76,8 @@ const userSchema = new mongoose.Schema({
     stories: { type: [storiesSchema], default: [] },
     reels: { type: [reelsSchema], default: [] },
     likedTweets: { type: [], default: [] },
-    retweetedTweets: { type: [], default: [] }
+    retweetedTweets: { type: [], default: [] },
+    bookmarks : {type:[],default:[]}
 }, { timestamps: true })
 
 
