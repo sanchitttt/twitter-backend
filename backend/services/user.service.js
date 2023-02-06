@@ -28,24 +28,369 @@ const sortingFn = (a, b) => {
 }
 
 class UserService {
-    async getBookmarks(email){
+    async getLikedTweets(accountHandle) {
         try {
-            const result = await Users.findOne({email:email});
+            const result = await Users.findOne({ accountHandle: accountHandle });
             // console.log(result);
-            return result.bookmarks?result.bookmarks:[];
+            return result.likedTweets;
+        } catch (error) {
+            console.log('error',error)
+            throw error;
+        }
+    }
+    async getTweetsOfAttachment(accountHandle) {
+        try {
+            const user = await Users.findOne({ accountHandle: accountHandle });
+            const result = [];
+      
+            for (let i = 0; i < user.tweets.length; i++) {
+            
+                if (Array.isArray(user.tweets[i])) {
+                    for (let j = 0; j < user.tweets[i].length; j++) {
+                        if (user.tweets[i][j].attachments.length) {
+                            result.push(user.tweets[i][j]);
+                        }
+                    }
+                }
+                else {
+                    if (user.tweets[i].attachments.length) {
+                        result.push(user.tweets[i]);
+                    }
+                }
+            }
+  
+            return {
+                accountName : user.accountName,
+                accountHandle : user.accountHandle,
+                profileSrc : user.profileSrc,
+                verified : user.verified,
+                tweets : result
+            }
+        } catch (error) {
+            console.log('error bc error',error);
+            throw error;
+        }
+    }
+    async getOtherStories(email) {
+        try {
+            const allUsers = await Users.find({ email: { $ne: email } });
+            const result = [];
+            for (let i = 0; i < allUsers.length; i++) {
+                result.push(
+                    {
+                        profileSrc: allUsers[i].profileSrc,
+                        accountName: allUsers[i].accountName,
+                        accountHandle: allUsers[i].accountHandle,
+                        storyItems: allUsers[i].stories
+                    }
+                )
+            }
+            // //console.log(result, '---------------------');
+            return result;
+        } catch (err) {
+            throw err;
+        }
+    }
+    async getStoryByEmail(email) {
+        try {
+            const user = await Users.findOne({ email: email });
+            return {
+                profileSrc: user.profileSrc,
+                accountName: user.accountName,
+                accountHandle: user.accountHandle,
+                storyItems: user.stories
+            }
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+    async getAllReels() {
+        try {
+            const allUsers = await Users.find({});
+            const reelsArr = [];
+
+            for (let i = 0; i < allUsers.length; i++) {
+                const { accountName, accountHandle, verified, profileSrc } = allUsers[i];
+                if (allUsers[i].reels && allUsers[i].reels.length) {
+                    for (let j = 0; j < allUsers[i].reels.length; j++) {
+                        reelsArr.push({
+                            accountName: accountName,
+                            accountHandle: accountHandle,
+                            verified: verified,
+                            profileSrc: profileSrc,
+                            reel: allUsers[i].reels[j]
+                        })
+                    }
+                }
+            }
+
+            return reelsArr;
         } catch (error) {
             throw error;
         }
     }
-    async postBookmarks(email,tweet){
-    
+    async getTweetById(globalEmail, accountHandlee, tweetId) {
         try {
-            console.log(`__________________________________`);
-            console.log(tweet);
-            const result = await Users.updateOne({email:email}, {
-                $push: {"bookmarks":tweet}
+            const user = await Users.findOne({ accountHandle: accountHandlee });
+            const tweets = user.tweets;
+            const email = user.email;
+            let activeIndex;
+            const accountName = user.accountName;
+            const accountHandle = user.accountHandle;
+            const profileSrc = user.profileSrc;
+            const verified = user.profileSrc;
+            const typeOfVerification = user.typeOfVerification;
+            const userDetailsObj = {
+                accountHandle: accountHandle,
+                accountName: accountName,
+                profileSrc: profileSrc,
+                verified: verified,
+                typeOfVerification: typeOfVerification
+            }
+            for (let i = 0; i < tweets.length; i++) {
+                let found = false;
+                if (Array.isArray(tweets[i])) {
+                    for (let j = 0; j < tweets[i].length; j++) {
+                        let pollChoice;
+                        if (tweets[i][j].poll.options && tweets[i][j].options.length) {
+                            for (let k = 0; k < tweets[i][j].poll.votes.length; k++) {
+                                if (tweets[i][j].poll.votes[k].email === globalEmail || (tweets[i][j].poll.votes[k].email === email && email === globalEmail)) {
+                                    pollChoice = tweets[i][j].poll.votes[k].pollChoice;
+                                    break;
+                                }
+                            }
+                        }
+                        if (tweets[i][j] && tweets[i][j].retweetedBy && tweets[i][j].retweetedBy.length) {
+                            for (let p = 0; p < tweets[i][j].retweetedBy.length; p++) {
+                                // //console.log(tweets[i][j].retweetedBy[p])
+                                if (tweets[i][j].retweetedBy[p][1] === globalEmail
+                                    && tweets[i][j].retweetedBy[p][0] === tweets[i][j]._id.toString()
+                                ) {
+                                    tweets[i][j].retweetedAlready = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (tweets[i][j] && tweets[i][j].likedBy && tweets[i][j].likedBy.length) {
+                            for (let z = 0; z < tweets[i][j].likedBy.length; z++) {
+                                if (tweets[i][j].likedBy[z] === globalEmail) {
+                                    tweets[i][j].alreadyLiked = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if ((tweets[i][j]._id.toString()) === tweetId) {
+                            found = true;
+                            activeIndex = j;
+                        }
+
+                    }
+                }
+                else {
+                    if ((tweets[i]._id.toString()) === tweetId) {
+                        // //console.log(tweets[i]);
+                        let pollChoice;
+                        if (tweets[i].poll.options && tweets[i].poll.options.length) {
+                            for (let k = 0; k < tweets[i][j].poll.votes.length; k++) {
+                                if (tweets[i].poll.votes[k].email === globalEmail || (tweets[i].poll.votes[k].email === email && email === globalEmail)) {
+                                    pollChoice = tweets[i].poll.votes[k].pollChoice;
+                                    break;
+                                }
+                            }
+                        }
+                        if (tweets[i] && tweets[i].retweetedBy && tweets[i].retweetedBy.length) {
+                            for (let p = 0; p < tweets[i].retweetedBy.length; p++) {
+                                // //console.log(tweets[i].retweetedBy[p])
+                                if (tweets[i].retweetedBy[p][1] === globalEmail
+                                    && tweets[i].retweetedBy[p][0] === tweets[i]._id.toString()
+                                ) {
+                                    tweets[i].retweetedAlready = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (tweets[i] && tweets[i].likedBy && tweets[i].likedBy.length) {
+                            for (let z = 0; z < tweets[i].likedBy.length; z++) {
+                                if (tweets[i].likedBy[z] === globalEmail) {
+                                    tweets[i].alreadyLiked = true;
+                                    break;
+                                }
+                            }
+                        }
+                        return {
+                            ...userDetailsObj,
+                            tweets: tweets[i],
+                            createdAt: tweets[i].createdAt,
+                        }
+                    }
+                }
+                if (found) {
+                    return {
+                        ...userDetailsObj,
+                        tweets: tweets[i],
+                        activeIndex: activeIndex
+                    }
+                }
+            }
+        } catch (error) {
+            //console.log('error', error);
+            throw error;
+        }
+    }
+    async bookmarkExists(email, id) {
+        try {
+            const user = await Users.findOne({ email: email });
+            const bookmarks = user.bookmarks;
+            for (let i = 0; i < bookmarks.length; i++) {
+                if ((bookmarks[i].id).toString() === id) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+
+        }
+    }
+    async addReply(accountHandle, id, payload) {
+        try {
+            // //console.log(accountHandle, id, '**********************');
+            const user = await Users.findOne({ accountHandle: accountHandle });
+            const userTweets = user.tweets;
+
+            for (let i = 0; i < userTweets.length; i++) {
+                if (Array.isArray(userTweets[i])) {
+                    for (let j = 0; j < userTweets[i].length; j++) {
+                        // //console.log(j);
+                        if (userTweets[i][j]._id.toString() === id) {
+                            if (!userTweets[i][j].replies) {
+                                userTweets[i][j].replies = [payload];
+                                userTweets[i][j].replyCount = userTweets[i][j].replies.length;
+                            }
+                            else {
+                                userTweets[i][j].replies.push(payload);
+                                userTweets[i][j].replyCount = userTweets[i][j].replies.length;
+                            }
+                        }
+                    }
+                }
+                else {
+                    if ((userTweets[i]._id).toString() === id) {
+                        if (!userTweets[i].replies) {
+                            userTweets[i].replies = [payload];
+                            userTweets[i].replyCount = userTweets[i].replies.length;
+                        }
+                        else {
+                            userTweets[i].replies.push(payload);
+                            userTweets[i].replyCount = userTweets[i].replies.length;
+                        }
+                    }
+                }
+            }
+            // //console.log(userTweets)
+            await Users.updateOne({ accountHandle: accountHandle }, user);
+
+        } catch (error) {
+            throw error;
+        }
+    }
+    async toggleRetweet(email, accountHandle, id) {
+        try {
+            let result;
+            const user = await Users.findOne({ accountHandle: accountHandle });
+            const userTweets = user.tweets;
+            for (let i = 0; i < userTweets.length; i++) {
+                const arrayType = Array.isArray(userTweets[i]);
+                if (arrayType) {
+
+                    for (let j = 0; j < userTweets[i].length; j++) {
+                        if (!userTweets[i][j].retweets) {
+                            userTweets[i][j].retweets = 0;
+                        }
+                        if (id === (userTweets[i][j]._id).toString()) {
+                            if (userTweets[i][j].retweetedBy && userTweets[i][j].retweetedBy.length) {
+                                let found = false;
+                                const retweetedByArr = userTweets[i][j].retweetedBy;
+                                const filteredArr = [];
+                                for (let k = 0; k < retweetedByArr.length; k++) {
+                                    if (retweetedByArr[k][1] !== email) filteredArr.push(retweetedByArr[i]);
+                                    else {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (found) {
+                                    userTweets[i][j].retweetedBy = filteredArr
+                                    result = 'removed';
+                                }
+                                else {
+                                    userTweets[i][j].retweetedBy.push([id, email]);
+                                    result = 'added';
+                                };
+                                userTweets[i][j].retweets = userTweets[i][j].retweetedBy.length;
+                            }
+                            else {
+                                userTweets[i][j].retweetedBy = [[id, email]];
+                                userTweets[i][j].retweets = 0;
+                                result = 'added';
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (id === (userTweets[i]._id).toString()) {
+                        if (userTweets[i].retweetedBy && userTweets[i].retweetedBy.length) {
+                            let found = false;
+                            const filteredArr = [];
+                            for (let k = 0; k < userTweets[i].retweetedBy.length; k++) {
+                                if (userTweets[i].retweetedBy[k][1] !== email) filteredArr.push(userTweets[i].retweetedBy[k]);
+                                else {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (found) {
+                                userTweets[i].retweetedBy = filteredArr;
+                                result = 'removed';
+                            }
+                            else {
+                                userTweets[i].retweetedBy.push([id, email]);
+                                result = 'added';
+                            }
+                            userTweets[i].retweets = userTweets[i].retweetedBy.length;
+                        }
+                        else {
+                            userTweets[i].retweetedBy = [[id, email]];
+                            userTweets[i].retweets = 0;
+                            result = 'added';
+                        }
+                    }
+
+                }
+                await Users.updateOne({ accountHandle: accountHandle }, user)
+
+            }
+            return result;
+        } catch (error) {
+            //console.log('error', error);
+        }
+    }
+    async getBookmarks(email) {
+        try {
+            const result = await Users.findOne({ email: email });
+            // //console.log(result);
+            return result.bookmarks ? result.bookmarks : [];
+        } catch (error) {
+            throw error;
+        }
+    }
+    async postBookmarks(email, tweet) {
+
+        try {
+            // const alrea  
+            const result = await Users.updateOne({ email: email }, {
+                $push: { "bookmarks": tweet }
             })
-            console.log('reached',result);
             return result
         } catch (error) {
             throw error;
@@ -54,42 +399,73 @@ class UserService {
     async generateWhoToFollow(email) {
         try {
             const result = [];
-            const currentUser = await Users.find({ email: email });
-            const currentUserFollowing = currentUser[0].following;
-            const randomFollowingUsers = [];
-            // console.log(randomFollowingUsers)
-            for (let i = 0; i < 2; i++) {
-                let random = currentUserFollowing[Math.floor(Math.random() * currentUserFollowing.length)];
-                let found = false;
-                for (let i = 0; i < randomFollowingUsers.length; i++) {
-                    if (randomFollowingUsers[i].accountHandle === random.accountHandle) {
-                        found = true;
-                        break;
-                    }
+            let currentUser = await Users.find({ email: email });
+            currentUser = currentUser[0];
+
+            // //console.log(currentUser,"***********************");
+            const set = new Set();
+
+
+
+            for (let i = 0; i < currentUser.following.length; i++) {
+                if (!set.has(currentUser.following[i].accountHandle)) set.add(currentUser.following[i].accountHandle, 1);
+            }
+
+            const allOtherUsers = await Users.find({ email: { $ne: email } });
+            for (let i = 0; i < allOtherUsers.length; i++) {
+                if (!set.has(allOtherUsers[i].accountHandle)) {
+                    result.push({
+                        accountName: allOtherUsers[i].accountName,
+                        accountHandle: allOtherUsers[i].accountHandle,
+                        profileSrc: allOtherUsers[i].profileSrc,
+                        erified: allOtherUsers[i].verified,
+                        typeOfVerification: allOtherUsers[i].typeOfVerification
+                    })
                 }
-                // if(!found){
-                randomFollowingUsers.push({ accountName: random.accountName, accountHandle: random.accountHandle, profileSrc: random.profileSrc, verified: random.verified, typeOfVerification: random.typeOfVerification });
-                // }
 
             }
-            // console.log(`_________________________________________________`);
-            // console.log(randomFollowingUsers)
-            for (let i = 0; i < randomFollowingUsers.length; i++) {
-                const result2 = await Users.find({ accountHandle: randomFollowingUsers[i].accountHandle });
-                const result2Following = result2[0].following;
-                const oneRandomFromResult2Following = result2Following[Math.floor(Math.random() * result2Following.length)];
-                result.push(oneRandomFromResult2Following)
-            }
-            // console.log(result);
+
+            // const currentUserFollowing = currentUser[0].following;
+            // const randomFollowingUsers = [];
+            // // //console.log(randomFollowingUsers)
+            // if (!currentUserFollowing.length) {
+            //     return [];
+            // }
+            // for (let i = 0; i < 2; i++) {
+            //     let random = currentUserFollowing[Math.floor(Math.random() * currentUserFollowing.length)];
+            //     let found = false;
+            //     for (let i = 0; i < randomFollowingUsers.length; i++) {
+            //         if (randomFollowingUsers[i].accountHandle === random.accountHandle) {
+            //             found = true;
+            //             break;
+            //         }
+            //     }
+            //     // if(!found){
+            //     randomFollowingUsers.push({ accountName: random.accountName, accountHandle: random.accountHandle, profileSrc: random.profileSrc, verified: random.verified, typeOfVerification: random.typeOfVerification });
+            //     // }
+
+            // }
+            // // //console.log(`_________________________________________________`);
+            // // //console.log(randomFollowingUsers)
+            // for (let i = 0; i < randomFollowingUsers.length; i++) {
+            //     const result2 = await Users.find({ accountHandle: randomFollowingUsers[i].accountHandle });
+            //     const result2Following = result2[0].following;
+            //     const oneRandomFromResult2Following = result2Following[Math.floor(Math.random() * result2Following.length)];
+            //     result.push(oneRandomFromResult2Following)
+            // }
+            //console.log(result);
+
             return result;
         } catch (error) {
-            console.log('error',error);
+            //console.log('error', error);
             throw error;
         }
     }
     async removeLike(email, twitterWriter, id) {
         try {
             const writer = await Users.findOne({ accountHandle: twitterWriter });
+            const user = await Users.findOne({ email: email });
+            const userLikedTweets = user.likedTweets;
             const tweetsOfWriter = writer.tweets;
 
             for (let i = 0; i < tweetsOfWriter.length; i++) {
@@ -99,7 +475,7 @@ class UserService {
                         const currThread = currElement[j];
                         if (id === (currThread._id).toString()) {
                             if (currThread.likes !== null) {
-                                if (isNaN(currThread.likes))currThread.likes = 0;
+                                if (isNaN(currThread.likes)) currThread.likes = 0;
                                 else currThread.likes -= 1;
                             }
                             else {
@@ -112,14 +488,21 @@ class UserService {
                                     newLikedByArr.push(likedByArr[z]);
                                 }
                             }
+                            const filteredLikedTweets = [];
+                            for (let x = 0; x < userLikedTweets.length; x++) {
+                                if (userLikedTweets[x].tweets._id.toString() !== id) {
+                                    filteredLikedTweets.push(userLikedTweets[x]);
+                                }
+                            }
                             currThread.likedBy = newLikedByArr;
+                            user.likedTweets = filteredLikedTweets;
                         }
                     }
                 }
                 else {
                     if (id === (currElement._id).toString()) {
                         if (currElement.likes !== null) {
-                            if (isNaN(currElement.likes))currElement.likes = 0;
+                            if (isNaN(currElement.likes)) currElement.likes = 0;
                             else currElement.likes -= 1;
                         }
                         else {
@@ -132,11 +515,20 @@ class UserService {
                                 newLikedByArr.push(likedByArr[z]);
                             }
                         }
+
+                        const filteredLikedTweets = [];
+                        for (let x = 0; x < userLikedTweets.length; x++) {
+                            if (userLikedTweets[x].tweets._id.toString() !== id) {
+                                filteredLikedTweets.push(userLikedTweets[x]);
+                            }
+                        }
+                        user.likedTweets = filteredLikedTweets;
                         currElement.likedBy = newLikedByArr;
                     }
 
                 }
             }
+            await Users.updateOne({ email: email }, user);
             await Users.updateOne({ accountHandle: twitterWriter }, writer);
             return true;
         } catch (error) {
@@ -145,6 +537,7 @@ class UserService {
     }
     async addLike(email, twitterWriter, id) {
         try {
+            let obj;
             const writer = await Users.findOne({ accountHandle: twitterWriter });
             const tweetsOfWriter = writer.tweets;
             for (let i = 0; i < tweetsOfWriter.length; i++) {
@@ -152,9 +545,10 @@ class UserService {
                 if (Array.isArray(currElement)) {
                     for (let j = 0; j < currElement.length; j++) {
                         const currThread = currElement[j];
-                        if (id === (currThread._id).toString()) {
+                        if (id === (currThread._id.toString())) {
+                            obj = currThread;
                             if (currThread.likes !== null) {
-                                if (isNaN(currThread.likes))currThread.likes = 1;
+                                if (isNaN(currThread.likes)) currThread.likes = 1;
                                 else currThread.likes += 1;
                             }
                             else {
@@ -173,9 +567,10 @@ class UserService {
                     }
                 }
                 else {
-                    if (id === (currElement._id).toString()) {
+                    if (id === currElement._id.toString()) {
+                        obj = currElement;
                         if (currElement.likes !== null) {
-                            if (isNaN(currElement.likes))currElement.likes = 1;
+                            if (isNaN(currElement.likes)) currElement.likes = 1;
                             else currElement.likes += 1;
                         }
                         else {
@@ -193,7 +588,24 @@ class UserService {
 
                 }
             }
+            if (email !== twitterWriter) {
+                const globalUser = await Users.findOne({ email: email });
+                globalUser.likedTweets.push({
+                    accountName: writer.accountName,
+                    accountHandle: writer.accountHandle,
+                    verified: writer.verified,
+                    profileSrc : writer.profileSrc,
+                    tweets: obj
+                })
+                //console.log(globalUser, globalUser.likedTweets);
+                await Users.updateOne({ email: email }, globalUser);
+            }
+            else {
+                writer.likedTweets.push(obj);
+            }
+
             await Users.updateOne({ accountHandle: twitterWriter }, writer);
+
             return true;
         } catch (error) {
             throw error;
@@ -276,7 +688,6 @@ class UserService {
         }
     }
     async getTimeline(globalEmail) {
-
         try {
             const tweetsArr = [];
             const users = await Users.find({});
@@ -307,6 +718,17 @@ class UserService {
                                             pollChoice = users[i].tweets[j][l].poll.votes[m].pollChoice;
                                             break;
                                         }
+                                    }
+                                }
+                            }
+                            if (users[i].tweets[j][l] && users[i].tweets[j][l].retweetedBy && users[i].tweets[j][l].retweetedBy.length) {
+                                for (let p = 0; p < users[i].tweets[j][l].retweetedBy.length; p++) {
+                                    //console.log(users[i].tweets[j][l].retweetedBy[p])
+                                    if (users[i].tweets[j][l].retweetedBy[p][1] === globalEmail
+                                        && users[i].tweets[j][l].retweetedBy[p][0] === users[i].tweets[j][l]._id.toString()
+                                    ) {
+                                        users[i].tweets[j][l].retweetedAlready = true;
+                                        break;
                                     }
                                 }
                             }
@@ -349,11 +771,22 @@ class UserService {
                                 }
                             }
                         }
+                        if (users[i].tweets[j].retweetedBy && users[i].tweets[j].retweetedBy.length) {
+                            for (let p = 0; p < users[i].tweets[j].retweetedBy.length; p++) {
+                                if (users[i].tweets[j].retweetedBy[p][1] === globalEmail &&
+                                    users[i].tweets[j].retweetedBy[p][0] === users[i].tweets[j]._id.toString()
+                                ) {
+                                    users[i].tweets[j].retweetedAlready = true;
+                                    break;
+                                }
+                            }
+                        }
+
                         tweetsArr.push({
                             ...userDetailsObj,
                             ...users[i].tweets[j],
                             alreadyVoted: pollChoice || pollChoice === 0 ? pollChoice : null,
-                            alreadyLiked: likedAlready ? likedAlready : false
+                            alreadyLiked: likedAlready ? likedAlready : false,
                         });
                     }
                 }
@@ -364,6 +797,7 @@ class UserService {
             tweetsArr.sort((a, b) => sortingFn(b, a));
             return tweetsArr;
         } catch (error) {
+            //console.log('error', error);
             throw error;
         }
     }
@@ -373,6 +807,25 @@ class UserService {
                 imageSrc: payload.imgSrc,
                 scaleLevel: payload.scaleValue,
                 rotateLevel: payload.rotateValue
+            }
+            const result = await Users.updateOne({ email: email }, {
+                $push: { stories: obj }
+            })
+            return result;
+        } catch (error) {
+            throw error;
+        }
+    }
+    async newTextStory(email, payload) {
+        try {
+            const obj = {
+                type: payload.type,
+                text: payload.text,
+                fontFamily: payload.fontFamily,
+                textColor: payload.textColor,
+                backgroundColor: payload.backgroundColor,
+                backgroundImage: payload.backgroundImage
+
             }
             const result = await Users.updateOne({ email: email }, {
                 $push: { stories: obj }
@@ -392,13 +845,15 @@ class UserService {
             throw error;
         }
     }
-    async editProfile(email, accountName, accountBio, location, website) {
+    async editProfile(email, accountName, accountBio, location, website, profileSrc, profileBanner) {
         try {
             const user = await Users.findOne({ email: email });
             user.accountName = accountName;
             user.bio = accountBio;
             user.location = location;
             user.website = website;
+            user.profileBanner = profileBanner,
+                user.profileSrc = profileSrc
             await Users.updateOne({ email: email }, user);
             return true;
         } catch (error) {
@@ -476,13 +931,6 @@ class UserService {
         try {
             const details = await Users.findOne({ email: email }, { likedTweets: 0, retweetedTweets: 0 });
             return details;
-        } catch (error) {
-            throw error;
-        }
-    }
-    async toggleLike(email, tweetId) {
-        try {
-
         } catch (error) {
             throw error;
         }

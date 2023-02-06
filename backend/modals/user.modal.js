@@ -61,6 +61,7 @@ const followingAndFollowerSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
     profileSrc: { type: String, default: 'https://cdn-icons-png.flaticon.com/512/847/847969.png' },
+    profileBanner : {type:String,default:null},
     email: { type: String, validate: (val) => validateEmail(val), required: true, unique: true },
     accountName: { type: String, maxLength: 50, required: true },
     accountHandle: { type: String, maxLength: 15, required: true, unique: true },

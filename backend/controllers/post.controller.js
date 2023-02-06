@@ -17,7 +17,7 @@ const toggleLike = async (req, res) => {
         const { email } = req.user;
         const { tweetId, tweetsWriter } = req.body;
         const alreadyLiked = await UserServiceInstance.alreadyLiked(email, tweetsWriter, tweetId);
-        console.log(alreadyLiked)
+        
         if (alreadyLiked) {
             const afterUnliking = await UserServiceInstance.removeLike(email, tweetsWriter, tweetId);
             res.status(200).json({ "message": "Successfully unliked!" });
@@ -32,4 +32,40 @@ const toggleLike = async (req, res) => {
     }
 }
 
-module.exports = { toggleLike, postPollChoice }
+const postToggleRetweet = async (req, res) => {
+    try {
+        const { email } = req.user;
+        const { id, accountHandle } = req.body;
+        const result = await UserServiceInstance.toggleRetweet(email, accountHandle, id);
+        console.log(result);
+        if (result === 'added') {
+            res.status(200).json({ "message": "Successfully retweeted!" });
+        }
+        else {
+            res.status(200).json({ "message": "Successfully removed retweet!" });
+        }
+
+    } catch (error) {
+        console.log("Error", error);
+        res.status(500).json(error);
+    }
+}
+
+const postAddReply = async (req, res) => {
+    try {
+        const { email } = req.user; 
+        const {accountHandle,payload,id} = req.body;
+
+        console.log('reached',id)
+   
+        const result = await UserServiceInstance.addReply(accountHandle, id, payload);
+        console.log('reached2')
+        res.status(200).json(result);
+        // res.end();
+    } catch (error) {
+        console.log("Error", error);
+        res.status(500).json(error);
+    }
+}
+
+module.exports = { toggleLike, postPollChoice, postToggleRetweet, postAddReply }

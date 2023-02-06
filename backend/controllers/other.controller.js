@@ -24,6 +24,7 @@ const getSearchResults = async (req, res) => {
 const getWhoToFollow = async (req, res) => {
     try {
         const result = await UserServiceInstance.generateWhoToFollow(req.user.email);
+        console.log(result,'___________________________');
         res.status(200).json(result);
     }
     catch (err) {
